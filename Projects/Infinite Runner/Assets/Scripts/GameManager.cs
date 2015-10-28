@@ -1,66 +1,60 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour 
 {
+	#region Events
+	public delegate void OnIncreaseSpeedHandler ();
+	public event OnIncreaseSpeedHandler onIncreaseSpeed;
+	public delegate void OnGameOver();
+	public event OnGameOver onGameOver;
+	#endregion
+
 	private static GameManager instance = null;
+	private GUIManager guiManager = null;
 
 	public GameObject obstacleInstantiator = null;
 	public Obstacle obstaclePrefab = null;
-	public Canvas canvas = null;	
 	private int score = 0;
 	private int distance = 0;
-	private int previousDistance = 0;
-	private int previousTime = 0;
-	private int currentTime = 0;
-	private Text distanceGUI = null;
+	private int lives = 3;
+	private int previousPosition = 0;
 	public GameObject startPoint = null;
-	public CameraController camera = null;
-	public float playerSpeed = 5.0f;
+	private float speed = 5.0f;
 
 	public static List<Obstacle> obstacles = new List<Obstacle>();
 	public PlayerController player = null;
 	public PlayerController playerPrefab = null;
+
+	public float obstacleFrequency = 1.0f;
+	public float changeColorFrequency = 2.0f;
 	
 	void Awake()
 	{
 		instance = this;
 		player = instantiatePlayer ();
+		player.onPlayerDeath += this.Reset;
+		this.onIncreaseSpeed += this.IncreaseDifficulty;
+		guiManager = GUIManager.GetInstance ();
 
+		// Don't destroy
+		DontDestroyOnLoad (this);
 	}
 	
 	// Use this for initialization
 	void Start () 
 	{
-		distanceGUI = gameObject.GetComponent<Text> ();
+		StartCoroutine (instantiateObstacle (obstacleFrequency));
+		StartCoroutine (ChangeObstacleColor (changeColorFrequency));
 	}
 	
 	// Update is called once per frame
 	void Update () 
 	{
-		if (player == null) 
-		{
-			Invoke ("Reset", 5.0f);
-			//Reset ();
-		}
-
-		currentTime = Mathf.RoundToInt (Time.time);
-		
-		if (currentTime % 2 == 0 && previousTime != currentTime)
-			ChangeObstacleColor ();
-
-		if (distance % 5 == 0 && previousDistance != distance)
-			instantiateObstacle ();
-
-		//DisplayData ();
-		
-		previousTime = currentTime;
-		previousDistance = distance;
-
+		CalculateDistance ();
 		CalculateScore ();
-		CleanUp ();
+		DisplayData ();
 	}
 	
 	public static GameManager GetInstance()
@@ -68,24 +62,14 @@ public class GameManager : MonoBehaviour
 		return instance;
 	}
 
-	public void SetScore(int score)
+	public float GetSpeed()
 	{
-		this.score = score;
+		return speed;
 	}
 
-	public int GetScore()
+	public PlayerController GetPlayer()
 	{
-		return score;
-	}
-
-	public void SetDistance(int distance)
-	{
-		this.distance = distance;
-	}
-
-	public int GetDistance()
-	{
-		return distance;
+		return player;
 	}
 
 	public List<Obstacle> GetObstaclesList()
@@ -93,45 +77,46 @@ public class GameManager : MonoBehaviour
 		return obstacles;
 	}
 
-	private void DisplayData()
+	public void DisplayData()
 	{
-		//distanceGUI.text = "Distance: " + distance;
+		guiManager.UpdateDistance (distance.ToString());
+		guiManager.UpdateScore (score.ToString());
+		guiManager.UpdateLives (lives.ToString ());
 	}
 
-	private void OnGUI()
+	private void CalculateDistance()
 	{
-		GUI.Label (new Rect (10, 10, 100, 20), "Score: " + score);
-		GUI.Label (new Rect (10, 30, 100, 20), "Distance: " + distance);
-	}
+		int currentPosition = (int)player.transform.position.x;
 
-	public void CalculateDistance(int currentPosition, int previousPosition)
-	{
 		int deltaDistance = currentPosition - previousPosition;
 
 		if(deltaDistance >= 1)
-		{			
 			distance += deltaDistance;
-		}
+
+		previousPosition = currentPosition;
 	}
 
 	private void CalculateScore()
 	{
-		foreach (Obstacle obstacle in obstacles) 
-		{
-			if (obstacle.transform.position.x
-				< player.transform.position.x) 
-			{
-				obstacle.isPassed = true;
+		score = distance * 3;
 
-				if(obstacle.isPassed == true)
-				{
-					Debug.Log ("Obstacle #" + obstacles.IndexOf(obstacle)
-					           + " has been passed!");
-					score++;
-				}
 
-			}
-		}
+//		foreach (Obstacle obstacle in obstacles) 
+//		{
+//			if (obstacle.transform.position.x
+//				< player.transform.position.x) 
+//			{
+//				obstacle.isPassed = true;
+//
+//				if(obstacle.isPassed == true)
+//				{
+//					Debug.Log ("Obstacle #" + obstacles.IndexOf(obstacle)
+//					           + " has been passed!");
+//					score++;
+//				}
+//
+//			}
+//		}
 	}
 
 	private PlayerController instantiatePlayer()
@@ -141,59 +126,89 @@ public class GameManager : MonoBehaviour
 		return player;
 	}
 
-	public PlayerController GetPlayer()
-	{
-		return player;
-	}
 
-	private void instantiateObstacle()
+
+	private IEnumerator instantiateObstacle(float frequency)
 	{
+		yield return new WaitForSeconds(frequency);
 		Obstacle obstacleInstance;
 		obstacleInstance = Instantiate (obstaclePrefab, obstacleInstantiator.transform.position, 
 		             obstacleInstantiator.transform.rotation) as Obstacle;
+
+		StartCoroutine (instantiateObstacle (frequency));
 	}
 
-	public void ChangeObstacleColor()
+	private IEnumerator ChangeObstacleColor(float frequency)
 	{
+		yield return new WaitForSeconds (frequency);
+
 		foreach (Obstacle obstacle in obstacles) 
 		{
 			obstacle.ChangeColor();
 		}
+
+		onIncreaseSpeed ();
+
+		StartCoroutine (ChangeObstacleColor (changeColorFrequency));
+	}
+
+	private void PlayerDeath()
+	{
+		//StartCoroutine (Reset ());
 	}
 
 	private void Reset()
 	{
-		//camera.ResetPosition ();
+		//yield return new WaitForSeconds (5);
+
+		// Instantiate a new player.
 		player = instantiatePlayer ();
 
-		foreach (Obstacle obstacle in obstacles) 
-		{
-			Destroy (obstacle.gameObject);
-		}
+		//Subscribe it to the new player.
+		player.onPlayerDeath += this.Reset;
 
+		// Destroy all obstacles.
+		foreach (Obstacle obstacle in obstacles) 
+			Destroy (obstacle.gameObject);
+
+		// Delete obstacles from list.
 		obstacles.Clear ();
 
+		// Reset variables.
 		distance = 0;
 		score = 0;
+		speed = 5;
 
+		if(lives >= 0)
+			lives--;
+		else
+			Debug.Log ("GAME OVER");
 
-	}
-
-	private void CleanUp()
-	{
 		// If the obstacle is out of camera and behind
 		// the player, destroy it.
 		foreach (Obstacle obstacle in obstacles) 
 		{
-			if(!obstacle.GetComponent<Renderer>().isVisible
-			   && (obstacle.transform.position.x
-			    < player.transform.position.x))
+			if (!obstacle.GetComponent<Renderer> ().isVisible
+					&& (obstacle.transform.position.x
+					< player.transform.position.x)) 
 			{
-				obstacles.Remove (obstacle);
-				Destroy (obstacle.gameObject);
+					obstacles.Remove (obstacle);
+					Destroy (obstacle.gameObject);
 			}
 		}
 	}
+
+	private void IncreaseDifficulty()
+	{
+		speed += 1;
+	}
+
+	public void ResumeGame()
+	{
+		Time.timeScale = 1.0f;
+	}
+
+
 
 
 

@@ -3,7 +3,12 @@ using System.Collections;
 
 public class PlayerController : MonoBehaviour 
 {
-	private float speed = 0.1f;
+	#region Events
+	public delegate void OnPlayerDeathHandler ();
+	public event OnPlayerDeathHandler onPlayerDeath;
+	#endregion
+
+	private float speed = 5.0f;
 	public float jumpHeight = 200.0f;
 	private bool isGrounded = true;
 	private bool canChangeColor = true;
@@ -14,28 +19,29 @@ public class PlayerController : MonoBehaviour
 	// Use this for initialization
 	void Start () 
 	{
+		// Set the color of the cube to red.
 		GetComponent<Renderer> ().material.color = Color.red;
+
+		GameManager.GetInstance().onIncreaseSpeed += this.SetSpeed;
+
+		// Freeze the rotation in all axes.
+		transform.GetComponent<Rigidbody> ().constraints = 
+			RigidbodyConstraints.FreezeRotation;
 	}
 	
 	// Update is called once per frame
 	void Update () 
 	{
-
-		playerPosition.x = transform.position.x + speed;
+		// Constantly keep the player moving to the right.
+		playerPosition.x = transform.position.x + speed * Time.deltaTime;
 		playerPosition.y = transform.position.y;
-
-		// Makes the player constantly move to the right.
+		playerPosition.z = 0;
 		transform.position = playerPosition;
-
-		// Lock Rotation
-		//transform.rotation = new Vector3 (0f, 0f, 0f);
-
-		CalculateDistance ();
 	}
 
-	public void SetSpeed(float speed)
+	public void SetSpeed()
 	{
-		this.speed = speed;
+		speed = GameManager.GetInstance().GetSpeed();
 	}
 
 	// Jump function
@@ -82,11 +88,19 @@ public class PlayerController : MonoBehaviour
 		{
 			if(GetComponent<Renderer>().material.color 
 			   == collision.gameObject.GetComponent<Renderer>().material.color)
+			{
 				collision.gameObject.GetComponent<Rigidbody>().detectCollisions = false;
+			}
 			else
 			{
-				Instantiate(remains, transform.position, transform.rotation);
-				Destroy(gameObject);
+				if(onPlayerDeath != null)
+				{
+					onPlayerDeath();
+					GameObject cubeRemains = Instantiate(remains, transform.position, transform.rotation) 
+						as GameObject;
+					Destroy(gameObject);
+					Destroy (cubeRemains, 2.0f);
+				}
 			}
 		}
 	}
@@ -103,13 +117,4 @@ public class PlayerController : MonoBehaviour
 //			canChangeColor = true;
 //	}
 
-	private void CalculateDistance()
-	{
-		int currentPosition = (int)gameObject.transform.position.x;
-
-		GameManager.GetInstance ().CalculateDistance (
-			currentPosition, previousPosition);
-
-		previousPosition = currentPosition;
-	}
 }
