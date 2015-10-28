@@ -14,14 +14,19 @@ public class GUIManager : MonoBehaviour
 	
 	void Awake()
 	{
-		instance = this;
-		DontDestroyOnLoad (this);
+		if (instance == null) 
+		{
+			instance = this;
+			//DontDestroyOnLoad(this);
+		}
+		else Destroy(this);
 		inGameMenu.gameObject.SetActive (false);
 	}
 
 	// Use this for initialization
 	void Start () 
 	{
+
 	}
 	
 	// Update is called once per frame
@@ -55,20 +60,20 @@ public class GUIManager : MonoBehaviour
 
 	public void OnButtonPress(Button button)
 	{
+		print (button.name);
+
 		if(button.name == "Start Game Button")
 			Application.LoadLevel (1);
 
 		if (button.name == "Quit Game Button") 
 		{
-			print ("Quitting");
-
 			UnityEditor.EditorApplication.isPlaying = false;
 
 
 			//Application.Quit ();
 		}
 
-		if (button.name == "Resume Game") 
+		if (button.name == "Resume Game Button") 
 		{
 			inGameMenu.gameObject.SetActive(false);
 			StartCoroutine (ResumeGame ());
@@ -116,5 +121,10 @@ public class GUIManager : MonoBehaviour
 		counterLabel.text = "3";
 		//counter = 3;
 		GameManager.GetInstance().ResumeGame();
+	}
+
+	public void LoadGameobjects()
+	{
+
 	}
 }
