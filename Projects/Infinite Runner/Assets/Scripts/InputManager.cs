@@ -40,7 +40,7 @@ public class InputManager : MonoBehaviour
 
 		if (Input.GetKeyDown (KeyCode.Escape)) 
 		{
-			Time.timeScale = 0;
+			GameManager.GetInstance().PauseGame();
 			GUIManager.GetInstance ().ShowInGameMenu ();
 		}
 	}

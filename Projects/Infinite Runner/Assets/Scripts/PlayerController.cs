@@ -96,10 +96,10 @@ public class PlayerController : MonoBehaviour
 				if(onPlayerDeath != null)
 				{
 					onPlayerDeath();
-					GameObject cubeRemains = Instantiate(remains, transform.position, transform.rotation) 
-						as GameObject;
+//					GameObject cubeRemains = Instantiate(remains, transform.position, transform.rotation) 
+//						as GameObject;
 					Destroy(gameObject);
-					Destroy (cubeRemains, 2.0f);
+					//Destroy (cubeRemains, 2.0f);
 				}
 			}
 		}

@@ -4,6 +4,9 @@ using System.Collections.Generic;
 
 public class GameManager : MonoBehaviour 
 {
+//	public List<GameState> states = new List<GameState>();
+//	public StateMachineEngine stateMachine = null;
+
 	#region Events
 	public delegate void OnIncreaseSpeedHandler ();
 	public event OnIncreaseSpeedHandler onIncreaseSpeed;
@@ -24,37 +27,65 @@ public class GameManager : MonoBehaviour
 	private float speed = 5.0f;
 
 	public static List<Obstacle> obstacles = new List<Obstacle>();
+	public static List<HighScore> highScores = new List<HighScore> ();
 	public PlayerController player = null;
 	public PlayerController playerPrefab = null;
 
 	public float obstacleFrequency = 1.0f;
 	public float changeColorFrequency = 2.0f;
+
+	public string playerName = null;
 	
 	void Awake()
 	{
-		instance = this;
-		player = instantiatePlayer ();
-		player.onPlayerDeath += this.Reset;
-		this.onIncreaseSpeed += this.IncreaseDifficulty;
-		guiManager = GUIManager.GetInstance ();
+		if (instance == null) 
+		{
+			instance = this;
+			DontDestroyOnLoad(this);
+		}
+		else Destroy(this);
+	}
 
-		// Don't destroy
-		DontDestroyOnLoad (this);
+	void OnLevelWasLoaded(int index)
+	{
+		switch (index) 
+		{
+		case 0:
+			break;
+		case 1:
+			obstacleInstantiator = GameObject.Find("Obstacle Instantiator");
+			//obstaclePrefab = GameObject.Find("Color Cube Obstacle").GetComponent<Obstacle>();
+			obstaclePrefab = Resources.Load("Prefabs/Color Cube Obstacle", typeof(Obstacle)) as Obstacle;
+			startPoint = GameObject.Find("Start Point");
+			//playerPrefab = GameObject.Find("AnimatedPlayer").GetComponent<PlayerController>();
+			playerPrefab = Resources.Load("Prefabs/AnimatedPlayer", typeof(PlayerController)) as PlayerController;
+			player = instantiatePlayer ();
+			player.onPlayerDeath += this.PlayerDeath;
+			this.onIncreaseSpeed += this.IncreaseDifficulty;
+			guiManager = GUIManager.GetInstance ();
+			StartCoroutine (instantiateObstacle (obstacleFrequency));
+			StartCoroutine (ChangeObstacleColor (changeColorFrequency));
+			break;
+		default:
+			Debug.Log ("ERROR: That is not a valid level index.");
+			break;
+		}
 	}
 	
 	// Use this for initialization
 	void Start () 
 	{
-		StartCoroutine (instantiateObstacle (obstacleFrequency));
-		StartCoroutine (ChangeObstacleColor (changeColorFrequency));
 	}
 	
 	// Update is called once per frame
 	void Update () 
 	{
-		CalculateDistance ();
-		CalculateScore ();
-		DisplayData ();
+		if (player) 
+		{
+			CalculateDistance ();
+			CalculateScore ();
+			DisplayData ();
+		}
 	}
 	
 	public static GameManager GetInstance()
@@ -65,6 +96,16 @@ public class GameManager : MonoBehaviour
 	public float GetSpeed()
 	{
 		return speed;
+	}
+
+	public string GetPlayerName()
+	{
+		return playerName;
+	}
+
+	public void SetPlayerName(string playerName)
+	{
+		this.playerName = playerName;
 	}
 
 	public PlayerController GetPlayer()
@@ -81,7 +122,6 @@ public class GameManager : MonoBehaviour
 	{
 		guiManager.UpdateDistance (distance.ToString());
 		guiManager.UpdateScore (score.ToString());
-		guiManager.UpdateLives (lives.ToString ());
 	}
 
 	private void CalculateDistance()
@@ -154,11 +194,15 @@ public class GameManager : MonoBehaviour
 
 	private void PlayerDeath()
 	{
-		//StartCoroutine (Reset ());
+		PauseGame ();
+		GUIManager.GetInstance ().UpdateFinalScore (score.ToString ());
+		GUIManager.GetInstance ().ShowPlayAgainMenu ();
 	}
 
-	private void Reset()
+	public void Reset()
 	{
+		GUIManager.GetInstance ().playAgainMenu.gameObject.SetActive (false);
+		ResumeGame ();
 		//yield return new WaitForSeconds (5);
 
 		// Instantiate a new player.
@@ -174,15 +218,14 @@ public class GameManager : MonoBehaviour
 		// Delete obstacles from list.
 		obstacles.Clear ();
 
+		SetHighScore ();
+
 		// Reset variables.
 		distance = 0;
 		score = 0;
 		speed = 5;
 
-		if(lives >= 0)
-			lives--;
-		else
-			Debug.Log ("GAME OVER");
+
 
 		// If the obstacle is out of camera and behind
 		// the player, destroy it.
@@ -203,9 +246,54 @@ public class GameManager : MonoBehaviour
 		speed += 1;
 	}
 
+	public void PauseGame()
+	{
+		Time.timeScale = 0.0f;
+	}
+
 	public void ResumeGame()
 	{
 		Time.timeScale = 1.0f;
+	}
+
+	public void SetHighScore()
+	{
+		// Add the player to the highScores list.
+		if (highScores.Count == 0)
+			highScores.Add (new HighScore (playerName, score));
+		else 
+		{
+			int insertIndex = 0;
+
+			foreach (HighScore highScore in highScores) 
+			{
+				if(score >= highScore.GetScore())
+				{
+					insertIndex = highScores.IndexOf(highScore);
+					break;
+				}
+				else if(score < highScore.GetScore())
+					insertIndex = highScores.IndexOf(highScore) + 1;
+			}
+
+			// Insert score
+			highScores.Insert(insertIndex, new HighScore(playerName, score));
+
+			// If there are more than 5 high scores, then remove
+			// the last high score from the list.
+			if(highScores.Count == 6)
+				highScores.Remove(highScores[5]);
+		}
+
+		int position = 1;
+
+		foreach (HighScore highScore in highScores)
+		{
+			print ("#" + position + " - " + highScore.GetName ()
+				+ " _ " + highScore.GetScore ());
+
+			position++;
+		}
 	}
 
 
@@ -213,3 +301,10 @@ public class GameManager : MonoBehaviour
 
 
 }
+
+//public enum GameState()
+//{
+//	NONE,
+//	RUNNING,
+//	PAUSE
+//};
