@@ -3,7 +3,7 @@ using System.Collections;
 
 public class CameraController : MonoBehaviour 
 {
-	private float speed = 5.0f;
+	public float speed = 5.0f;
 	private Vector3 cameraPosition = Vector3.zero;
 	private Vector3 resetCameraPosition = Vector3.zero;
 
@@ -16,9 +16,9 @@ public class CameraController : MonoBehaviour
 		resetCameraPosition = transform.position;
 
 		// Add it to the list of observers for various events.
-		GameManager.GetInstance ().GetPlayer ().onPlayerDeath
+		GameManager.Instance.onReset
 			+= this.Reset;
-		GameManager.GetInstance ().onIncreaseSpeed
+		GameManager.Instance.onIncreaseSpeed
 			+= this.SetSpeed;
 	}
 	
@@ -32,19 +32,15 @@ public class CameraController : MonoBehaviour
 
 	public void Reset()
 	{
-		//Subscribe it to the new player.
-		GameManager.GetInstance ().GetPlayer ().onPlayerDeath
-			+= this.Reset;
-
 		// Reset the position of the camera.
 		transform.position = resetCameraPosition;
 
 		// Reset the speed of the camera.
-		speed = GameManager.GetInstance ().GetSpeed ();
+		speed = GameManager.Instance.GetSpeed ();
 	}
 
 	public void SetSpeed()
 	{
-		speed = GameManager.GetInstance ().GetSpeed();
+		speed = GameManager.Instance.GetSpeed();
 	}
 }

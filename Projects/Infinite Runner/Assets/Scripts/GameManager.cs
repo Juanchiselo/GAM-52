@@ -10,12 +10,11 @@ public class GameManager : MonoBehaviour
 	#region Events
 	public delegate void OnIncreaseSpeedHandler ();
 	public event OnIncreaseSpeedHandler onIncreaseSpeed;
-	public delegate void OnGameOver();
-	public event OnGameOver onGameOver;
+	public delegate void OnReset();
+	public event OnReset onReset;
 	#endregion
 
-	private static GameManager instance = null;
-	private GUIManager guiManager = null;
+	public static GameManager Instance { get; private set; }
 
 	public GameObject obstacleInstantiator = null;
 	public Obstacle obstaclePrefab = null;
@@ -38,12 +37,12 @@ public class GameManager : MonoBehaviour
 	
 	void Awake()
 	{
-		if (instance == null) 
-		{
-			instance = this;
-			DontDestroyOnLoad(this);
-		}
-		else Destroy(this);
+		if (Instance != null && Instance != this)
+			Destroy (gameObject);
+		
+		Instance = this;
+		
+		DontDestroyOnLoad (gameObject);
 	}
 
 	void OnLevelWasLoaded(int index)
@@ -62,7 +61,7 @@ public class GameManager : MonoBehaviour
 			player = instantiatePlayer ();
 			player.onPlayerDeath += this.PlayerDeath;
 			this.onIncreaseSpeed += this.IncreaseDifficulty;
-			guiManager = GUIManager.GetInstance ();
+			//guiManager = GUIManager.GetInstance ();
 			StartCoroutine (instantiateObstacle (obstacleFrequency));
 			StartCoroutine (ChangeObstacleColor (changeColorFrequency));
 			break;
@@ -86,11 +85,6 @@ public class GameManager : MonoBehaviour
 			CalculateScore ();
 			DisplayData ();
 		}
-	}
-	
-	public static GameManager GetInstance()
-	{
-		return instance;
 	}
 
 	public float GetSpeed()
@@ -120,8 +114,8 @@ public class GameManager : MonoBehaviour
 
 	public void DisplayData()
 	{
-		guiManager.UpdateDistance (distance.ToString());
-		guiManager.UpdateScore (score.ToString());
+		GUIManager.Instance.UpdateDistance (distance.ToString());
+		GUIManager.Instance.UpdateScore (score.ToString());
 	}
 
 	private void CalculateDistance()
@@ -195,21 +189,28 @@ public class GameManager : MonoBehaviour
 	private void PlayerDeath()
 	{
 		PauseGame ();
-		GUIManager.GetInstance ().UpdateFinalScore (score.ToString ());
-		GUIManager.GetInstance ().ShowPlayAgainMenu ();
+		GUIManager.Instance.UpdateFinalScore (score.ToString ());
+		SetHighScore ();
+		GUIManager.Instance.ShowPlayAgainMenu ();
 	}
 
 	public void Reset()
 	{
-		GUIManager.GetInstance ().playAgainMenu.gameObject.SetActive (false);
+		// Reset variables.
+		distance = 0;
+		score = 0;
+		speed = 5;
+
+		GUIManager.Instance.playAgainMenu.gameObject.SetActive (false);
 		ResumeGame ();
-		//yield return new WaitForSeconds (5);
 
 		// Instantiate a new player.
 		player = instantiatePlayer ();
 
 		//Subscribe it to the new player.
-		player.onPlayerDeath += this.Reset;
+		player.onPlayerDeath += this.PlayerDeath;
+
+		onReset ();
 
 		// Destroy all obstacles.
 		foreach (Obstacle obstacle in obstacles) 
@@ -217,13 +218,6 @@ public class GameManager : MonoBehaviour
 
 		// Delete obstacles from list.
 		obstacles.Clear ();
-
-		SetHighScore ();
-
-		// Reset variables.
-		distance = 0;
-		score = 0;
-		speed = 5;
 
 
 

@@ -13,7 +13,7 @@ public class Obstacle : MonoBehaviour
 	void Start () 
 	{
 		// Adds this obstacle to the list of obstacles.
-		GameManager.GetInstance ().GetObstaclesList ().Add (this);
+		GameManager.Instance.GetObstaclesList ().Add (this);
 
 		// Sets the color of the obstacle.
 		ChangeColor ();

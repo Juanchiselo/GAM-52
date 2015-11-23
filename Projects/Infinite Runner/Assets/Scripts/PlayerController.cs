@@ -8,7 +8,7 @@ public class PlayerController : MonoBehaviour
 	public event OnPlayerDeathHandler onPlayerDeath;
 	#endregion
 
-	private float speed = 5.0f;
+	public float speed = 5.0f;
 	public float jumpHeight = 200.0f;
 	private bool isGrounded = true;
 	private bool canChangeColor = true;
@@ -22,7 +22,7 @@ public class PlayerController : MonoBehaviour
 		// Set the color of the cube to red.
 		GetComponent<Renderer> ().material.color = Color.red;
 
-		GameManager.GetInstance().onIncreaseSpeed += this.SetSpeed;
+		GameManager.Instance.onIncreaseSpeed += this.SetSpeed;
 
 		// Freeze the rotation in all axes.
 		transform.GetComponent<Rigidbody> ().constraints = 
@@ -41,7 +41,7 @@ public class PlayerController : MonoBehaviour
 
 	public void SetSpeed()
 	{
-		speed = GameManager.GetInstance().GetSpeed();
+		speed = GameManager.Instance.GetSpeed();
 	}
 
 	// Jump function
@@ -96,10 +96,7 @@ public class PlayerController : MonoBehaviour
 				if(onPlayerDeath != null)
 				{
 					onPlayerDeath();
-//					GameObject cubeRemains = Instantiate(remains, transform.position, transform.rotation) 
-//						as GameObject;
 					Destroy(gameObject);
-					//Destroy (cubeRemains, 2.0f);
 				}
 			}
 		}

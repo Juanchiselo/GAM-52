@@ -5,9 +5,10 @@ using System.Text.RegularExpressions;
 
 public class GUIManager : MonoBehaviour 
 {
-	private static GUIManager instance = null;
+	public static GUIManager Instance { get; private set; }
 
 	// Labels
+	[Header("Text Labels")]
 	public Text lblPlayerName = null;
 	public Text lblDistance = null;
 	public Text lblScore = null;
@@ -15,13 +16,16 @@ public class GUIManager : MonoBehaviour
 	public Text lblFinalScore = null;
 
 	// Input Fields
+	[Header("Input Fields")]
 	public InputField txtPlayerName = null;
 
 	// Canvases
+	[Header("Canvases")]
 	public Canvas inGameMenu = null;
 	public Canvas playAgainMenu = null;
 
 	// Buttons
+	[Header("Buttons")]
 	public Button btnStartGame = null;
 	public Button btnQuitGame = null;
 	public Button btnResumeGame = null;
@@ -31,13 +35,12 @@ public class GUIManager : MonoBehaviour
 	
 	void Awake()
 	{
-		if (instance == null) 
-		{
-			instance = this;
-			DontDestroyOnLoad(this);
-		}
-		else 
-			Destroy(this);
+		if (Instance != null && Instance != this)
+			Destroy (gameObject);
+
+		Instance = this;
+
+		DontDestroyOnLoad (gameObject);
 	}
 
 	void OnLevelWasLoaded(int index)
@@ -45,6 +48,8 @@ public class GUIManager : MonoBehaviour
 		switch (index) 
 		{
 		case 0:
+			print("You are in the main menu");
+
 			// Finds the Player Name input field.
 			txtPlayerName = GameObject.Find("Player Name Input").GetComponent<InputField>();
 			btnStartGame = GameObject.Find("Start Game Button").GetComponent<Button>();
@@ -53,21 +58,48 @@ public class GUIManager : MonoBehaviour
 			lblDistance = null;
 			lblScore = null;
 			lblCounter = null;
+			lblFinalScore = null;
 			inGameMenu = null;
+			playAgainMenu = null;
 			btnResumeGame = null;
 			btnMainMenu = null;
+			btnPlayAgain = null;
+			btnMainMenu2 = null;
+
+			// Add the function to the button's onclick.
+			btnStartGame.onClick.AddListener(
+				delegate
+				{
+				OnButtonPress(btnStartGame);
+			}
+			);
+			
+			btnQuitGame.onClick.AddListener(
+				delegate 	
+				{
+				OnButtonPress(btnQuitGame);
+			}
+			);
+
+			txtPlayerName.onEndEdit.AddListener(
+				delegate
+				{
+				OnInputEnter(txtPlayerName);
+			}
+			);
+
 			break;
 		case 1:
 			txtPlayerName = null;
 			lblPlayerName = GameObject.Find("Player Name").GetComponent<Text>();
-			lblPlayerName.text = "Name:  " + GameManager.GetInstance().GetPlayerName();
+			lblPlayerName.text = "Name:  " + GameManager.Instance.GetPlayerName();
 			lblDistance = GameObject.Find("Distance").GetComponent<Text>();
 			lblScore = GameObject.Find("Score").GetComponent<Text>();
 			lblCounter = GameObject.Find("Counter").GetComponent<Text>();
 			lblCounter.gameObject.SetActive(false);
 			inGameMenu = GameObject.Find("In-Game Menu").GetComponent<Canvas>();
 			btnResumeGame = inGameMenu.transform.Find("Resume Game Button").GetComponent<Button>();
-			btnMainMenu = inGameMenu.transform.Find("Main Menu Button").GetComponent<Button>();
+			btnMainMenu = inGameMenu.transform.Find("Quit Game Button").GetComponent<Button>();
 
 			// Add the function to the button's onclick.
 			btnResumeGame.onClick.AddListener(
@@ -87,7 +119,7 @@ public class GUIManager : MonoBehaviour
 			playAgainMenu = GameObject.Find("Play Again Menu").GetComponent<Canvas>();
 			lblFinalScore = playAgainMenu.transform.Find("Final Score").GetComponent<Text>();
 			btnPlayAgain = playAgainMenu.transform.Find("Play Again Button").GetComponent<Button>();
-			btnMainMenu2 = playAgainMenu.transform.Find("Main Menu Button").GetComponent<Button>();
+			btnMainMenu2 = playAgainMenu.transform.Find("Quit Game Button").GetComponent<Button>();
 			// Add the function to the button's onclick.
 			btnPlayAgain.onClick.AddListener(
 				delegate
@@ -120,6 +152,7 @@ public class GUIManager : MonoBehaviour
 	// Use this for initialization
 	void Start () 
 	{
+		GameObject.Find ("Player Name Input").gameObject.SetActive (false);
 	}
 	
 	// Update is called once per frame
@@ -127,11 +160,11 @@ public class GUIManager : MonoBehaviour
 	{
 	}
 
-	// Returns an instance of the GUIManager.
-	public static GUIManager GetInstance()
-	{
-		return instance;
-	}
+//	// Returns an instance of the GUIManager.
+//	public static GUIManager GetInstance()
+//	{
+//		return instance;
+//	}
 
 	// Updates the Distance text label.
 	public void UpdateDistance(string distance)
@@ -168,8 +201,8 @@ public class GUIManager : MonoBehaviour
 			if(Application.isPlaying)
 				Application.Quit();
 
-			if(Application.isEditor)
-				UnityEditor.EditorApplication.isPlaying = false;
+//			if(Application.isEditor)
+//				UnityEditor.EditorApplication.isPlaying = false;
 		}
 
 		if (button.name == "Resume Game Button") 
@@ -185,8 +218,7 @@ public class GUIManager : MonoBehaviour
 
 		if (button.name == "Play Again Button") 
 		{
-			print("You pressed play gain");
-			GameManager.GetInstance().Reset();
+			GameManager.Instance.Reset();
 		}
 	}
 
@@ -198,7 +230,7 @@ public class GUIManager : MonoBehaviour
 		// First Name only.
 		if (Regex.IsMatch (inputField.text, "^[A-Z]?[a-z]{2,14}$")) 
 		{
-			GameManager.GetInstance ().SetPlayerName (inputField.text);
+			GameManager.Instance.SetPlayerName (inputField.text);
 			Application.LoadLevel (1);
 		} 
 		else 
@@ -262,6 +294,6 @@ public class GUIManager : MonoBehaviour
 		lblCounter.text = "3";
 
 		// Tell the GameManager to resume the game.
-		GameManager.GetInstance().ResumeGame();
+		GameManager.Instance.ResumeGame();
 	}
 }
