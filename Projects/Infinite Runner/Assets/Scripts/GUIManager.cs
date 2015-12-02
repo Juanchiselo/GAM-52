@@ -113,7 +113,7 @@ public class GUIManager : MonoBehaviour
 			btnQuitPAM = null;
 			btnQuitIGM = null;
 			txtPlayerName = null;
-			btnStartGame = GameObject.Find("Start Game Button").GetComponent<Button>();
+			btnStartGame = GameObject.Find("Start Button").GetComponent<Button>();
 			btnStartGame.onClick.AddListener(
 				delegate
 				{
@@ -319,6 +319,11 @@ public class GUIManager : MonoBehaviour
 			GameManager.Instance.Reset();
 		}
 
+		if (button.name == "Start Button") 
+		{
+			Application.LoadLevel("Level 1");
+		}
+
 		if (button.name == "Next Button")
 		{
 			int previousIndex = 0;
@@ -332,11 +337,13 @@ public class GUIManager : MonoBehaviour
 				}
 			}
 
-			if(previousIndex + 1 != lblInstructions.Length)
+			if(previousIndex + 1 != lblInstructions.Length - 1)
+			{
 				lblInstructions[previousIndex + 1].gameObject.SetActive(true);
+			}
 			else
 			{
-				lblInstructions[previousIndex].gameObject.SetActive(true);
+				lblInstructions[previousIndex + 1].gameObject.SetActive(true);
 				btnNextButton.gameObject.SetActive(false);
 				btnStartGame.gameObject.SetActive(true);
 			}

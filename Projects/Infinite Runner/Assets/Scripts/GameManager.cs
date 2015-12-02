@@ -243,7 +243,7 @@ public class GameManager : MonoBehaviour
 
 	private void IncreaseDifficulty()
 	{
-		speed += 1;
+		speed += 0.5f;
 	}
 
 	public void PauseGame()

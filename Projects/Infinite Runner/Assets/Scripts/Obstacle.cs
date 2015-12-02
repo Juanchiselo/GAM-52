@@ -59,14 +59,12 @@ public class Obstacle : MonoBehaviour
 		}
 	}
 
-	void OnCollisitionEnter(Collision collision)
+	void OnTriggerEnter(Collider other)
 	{
-		if (collision.gameObject.name == "Destroyer") 
+		if (other.gameObject.name == "Destroyer") 
 		{
-
-			print ("Colliding with destroyer");
 			GameManager.Instance.GetObstaclesList().Remove(this);
-			Destroy (this);
+			Destroy (gameObject);
 		}
 	}
 
