@@ -6,12 +6,13 @@ public class HighScore
 	private string name = null;
 	private int score = 0;
 
+	// HighScore class constructor
 	public HighScore(string name, int score)
 	{
 		this.name = name;
 		this.score = score;
 	}
-
+	
 	public void SetName(string name)
 	{
 		this.name = name;

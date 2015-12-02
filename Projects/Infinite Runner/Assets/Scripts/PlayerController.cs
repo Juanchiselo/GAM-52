@@ -12,9 +12,7 @@ public class PlayerController : MonoBehaviour
 	public float jumpHeight = 200.0f;
 	private bool isGrounded = true;
 	private bool canChangeColor = true;
-	private int previousPosition = 0;
 	private Vector3 playerPosition = Vector3.zero;
-	public GameObject remains = null;
 
 	// Use this for initialization
 	void Start () 

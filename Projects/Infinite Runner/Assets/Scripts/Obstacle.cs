@@ -59,6 +59,18 @@ public class Obstacle : MonoBehaviour
 		}
 	}
 
+	void OnCollisitionEnter(Collision collision)
+	{
+		if (collision.gameObject.name == "Destroyer") 
+		{
+
+			print ("Colliding with destroyer");
+			GameManager.Instance.GetObstaclesList().Remove(this);
+			Destroy (this);
+		}
+	}
+
+
 	// Checks if the player is inside the no change
 	// color area. If it is, the obstacle can't
 	// change color.
